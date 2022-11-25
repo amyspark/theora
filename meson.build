@@ -38,6 +38,7 @@ vorbis_dep = dependency('vorbis', version: '>= 1.0.1', required: false)
 libpng_dep = dependency('libpng', required: false)
 
 asm = get_option('asm').allowed()
+enable_asflag_probe = get_option('asflag-probe').allowed()
 if asm
   if host_machine.cpu_family() == 'x86_64'
     conf.set('CPU_x86_64', true)
@@ -47,6 +48,64 @@ if asm
     endif
   elif host_machine.cpu_family() == 'x86'
     conf.set('OC_X86_ASM', true)
+  elif host_machine.cpu_family() == 'arm' or host_machine.cpu_family() == 'aarch64'
+    conf.set('CPU_arm', true)
+    if cc.get_id() == 'gcc'
+      conf.set('OC_ARM_ASM', true)
+    endif
+  endif
+
+  if cc.get_id() == 'gcc' and conf.get('CPU_arm', false)
+    # The following checks were only designed for GNU AS.
+    # Perl is needed for the arm2gnu reformatter.
+    perl_exe = find_program('perl', required: false, disabler: true)
+
+    if not perl_exe.found()
+      warning('*** ARM assembly requires perl -- disabling optimizations')
+    endif
+
+    if enable_asflag_probe and perl_exe.found()
+      assembler_checks = [
+        [
+          ['HAVE_ARM_ASM_NEON', 'OC_ARM_ASM_NEON'],
+          '''.file "configure"
+              vorr d0,d0,d0
+          ''',
+          ['-mfpu=neon', '-march=armv7-a'],
+          'assembler supports NEON instructions on ARM'
+        ],
+        [
+          ['HAVE_ARM_ASM_MEDIA', 'OC_ARM_ASM_MEDIA'],
+          '''.file "configure"
+              shadd8 r3,r3,r3
+          ''',
+          ['-march=armv6j'],
+          'assembler supports ARMv6 media instructions on ARM'],
+        [
+          ['HAVE_ARM_ASM_EDSP', 'OC_ARM_ASM_EDSP'],
+          '''.file "configure"
+              qadd r3,r3,r3
+          ''',
+          ['-march=armv5e'],
+          'assembler supports EDSP instructions on ARM'
+        ]
+      ]
+
+      foreach check : assembler_checks
+        pass = cc.compiles(check[1],
+          args: ['-x', 'assembler'],
+          name: check[3]
+        ) or cc.compiles(check[1],
+            args: ['-x', 'assembler'] + check[2],
+            name: check[3]
+          )
+
+        foreach define : check[0]
+          conf.set(define, pass)
+          conf.set(define, pass)
+        endforeach
+      endforeach
+    endif
   endif
 endif
 
