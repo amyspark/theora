@@ -9,6 +9,26 @@ project(
 
 conf = configuration_data()
 
+enable_valgrind = get_option('valgrind-testing').allowed()
+
+test_env = []
+
+if enable_valgrind
+  valgrind_exe = find_program('valgrind')
+
+  conf.set('HAVE_VALGRIND', valgrind_exe.found())
+
+  if conf.get('HAVE_VALGRIND')
+    test_env += ['-q', '--leak-check=yes', '--show-reachable=yes', '--num-callers=100']
+
+    message('Tests will be run under: @0@'.format(env.get('VALGRIND_ENVIRONMENT')))
+  else
+    message('Valgrind not found')
+  endif
+else
+  message('Valgrind testing not enabled')
+endif
+
 compile_args = []
 
 cc = meson.get_compiler('c')
@@ -126,6 +146,8 @@ windows = import('windows')
 subdir('include')
 
 subdir('lib')
+
+subdir('tests')
 
 theora_dep = declare_dependency(
   link_with : libtheora,
