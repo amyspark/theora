@@ -35,6 +35,8 @@ ogg_dep = dependency('ogg',
 
 vorbis_dep = dependency('vorbis', version: '>= 1.0.1', required: false)
 
+libpng_dep = dependency('libpng', required: false)
+
 asm = get_option('asm').allowed()
 if asm
   if host_machine.cpu_family() == 'x86_64'

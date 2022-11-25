@@ -200,7 +200,7 @@ pkg.generate(
 libtheora = library(
   'theora',
   encoder_sources + decoder_sources,
-  dependencies: [m_dep, ogg_dep, config_dep],
+  dependencies: [m_dep, libpng_dep, ogg_dep, config_dep],
   include_directories: incdir,
   link_args: cc.get_supported_link_arguments(
     version_flag.format(theora_version_arg)
