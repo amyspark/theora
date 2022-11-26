@@ -222,6 +222,18 @@ if meson.version().version_compare('>=0.54.0')
   meson.override_dependency('theoraenc', theoraenc_dep)
 endif
 
+doc = get_option('doc')
+
+if doc.allowed()
+  doxygen_exe = find_program('doxygen', required: doc.enabled(), disabler: true)
+  if not doxygen_exe.found()
+    message('*** doxygen not found, API documentation will not be built')
+  endif
+  doc.disable_auto_if(not doxygen_exe.found())
+endif
+
+subdir('doc')
+
 spec = get_option('spec')
 
 if spec.allowed()
