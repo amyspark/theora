@@ -55,7 +55,37 @@ ogg_dep = dependency('ogg',
 
 vorbis_dep = dependency('vorbis', version: '>= 1.0.1', required: false)
 
+sdl_dep = dependency('sdl', required: false)
+
+if not sdl_dep.found()
+  message('*** Unable to find SDL -- Not compiling example players ***')
+endif
+
+if cc.has_header('sys/soundcard.h') or cc.has_header('soundcard.h') or cc.has_header('machine/soundcard.h')
+  if host_machine.system() == 'openbsd'
+    oss_dep = dependency('ossaudio', required: false, disabler: true)
+  else
+    oss_dep = declare_dependency()
+  endif
+else
+  oss_dep = disabler()
+endif
+
+if not oss_dep.found()
+  message('OSS audio support not found -- not compiling player_example')
+endif
+
 libpng_dep = dependency('libpng', required: false)
+
+tiff_dep = dependency('tiff', required: false, disabler: true)
+
+if tiff_dep.found() and not cc.has_header_symbol(
+    'tiffio.h',
+    'TIFFReadRGBAImage',
+    dependencies: tiff_dep
+  )
+  tiff_dep = disabler()
+endif
 
 asm = get_option('asm').allowed()
 enable_asflag_probe = get_option('asflag-probe').allowed()
@@ -146,6 +176,10 @@ windows = import('windows')
 subdir('include')
 
 subdir('lib')
+
+if get_option('examples').enabled()
+  subdir('examples')
+endif
 
 subdir('tests')
 
