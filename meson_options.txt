@@ -1,3 +1,4 @@
+option('spec', type: 'feature', value: 'auto', description: 'Build the specification')
 option('valgrind-testing', type: 'feature', value: 'disabled', description: 'Enable running of tests inside Valgrind')
 option('asm', type: 'feature', value: 'enabled', description: 'Enable assembly optimizations')
 option('asflag-probe', type: 'feature', value: 'enabled', description: 'Enable instructions not supported by the default assembler flags (Arm only).')

@@ -221,3 +221,56 @@ if meson.version().version_compare('>=0.54.0')
   meson.override_dependency('theoradec', theoradec_dep)
   meson.override_dependency('theoraenc', theoraenc_dep)
 endif
+
+spec = get_option('spec')
+
+if spec.allowed()
+  # Note: unlike the original autotools script, here we use
+  # latexmk to do the dependency management for us.
+  # This implicates that we've got to copy spec.{tex,bib}
+  # to the build folder in /doc/spec/ to make all files
+  # live in the same folder.
+  latexmk_exe = find_program('latexmk', required: spec.enabled(), disabler: true)
+  transfig = find_program('fig2dev', required: spec.enabled(), disabler: true)
+  # used indirectly by latexmk
+  pdflatex = find_program('pdflatex', required: spec.enabled())
+  bibtex = find_program('bibtex', required: spec.enabled())
+
+  if latexmk_exe.found() and pdflatex.found() and bibtex.found() and transfig.found()
+    check_needed_tex_packages = find_program('doc/spec/check-needed-tex-packages.py', required: true)
+    test_tex_packages = find_program('doc/spec/test-tex-packages.py', required: true)
+
+    message('Checking for packages in @0@...'.format(meson.current_source_dir() / 'doc/spec/spec.tex'))
+
+    packages = run_command(
+      check_needed_tex_packages,
+      capture: true,
+      check: true
+    ).stdout().split()
+
+    tex_pkg_ok = true
+
+    foreach pkg : packages
+      message('for Tex package @0@'.format(pkg))
+
+      pkg_test = run_command(
+        test_tex_packages, '--pdflatex', pdflatex, pkg,
+        check: spec.enabled()
+      )
+      if pkg_test.returncode() != 0
+        tex_pkg_ok = false
+        break
+      endif
+    endforeach
+
+    spec = spec.disable_auto_if(not tex_pkg_ok)
+  else
+    spec = spec.disable_auto_if(true)
+  endif
+endif
+
+if spec.allowed()
+  subdir('doc/spec')
+else
+  message('*** Format Specification will not built.')
+endif
