@@ -212,7 +212,7 @@ endif
 libtheoradec = library(
   'theoradec',
   decoder_sources + common_arm_sources + decoder_res,
-  dependencies: [m_dep, libpng_dep, ogg_dep, config_dep],
+  dependencies: [m_dep, libpng_dep, ogg_dep, cairo_dep, config_dep],
   include_directories: incdir,
   vs_module_defs: '../win32/xmingw32/libtheoradec-all.def',
   link_args: cc.get_supported_link_arguments(

@@ -87,6 +87,18 @@ if tiff_dep.found() and not cc.has_header_symbol(
   tiff_dep = disabler()
 endif
 
+telemetry = get_option('telemetry')
+
+cairo_dep = dependency('cairo', required: false)
+
+if telemetry.allowed()
+  if cairo_dep.found()
+    conf.set('HAVE_CAIRO', true)
+  else
+    message('libcairo not found -- not compiling telemetry output support ')
+  endif
+endif
+
 asm = get_option('asm').allowed()
 enable_asflag_probe = get_option('asflag-probe').allowed()
 if asm
