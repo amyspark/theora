@@ -99,6 +99,12 @@ if telemetry.allowed()
   endif
 endif
 
+mem_constraint = get_option('mem-constraint')
+
+if mem_constraint.enabled()
+  conf.set('HAVE_MEMORY_CONSTRAINT', language: 'c')
+endif
+
 asm = get_option('asm').allowed()
 enable_asflag_probe = get_option('asflag-probe').allowed()
 if asm
