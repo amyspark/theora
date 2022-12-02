@@ -48,6 +48,14 @@ dump_psnr = executable(
   dependencies: [m_dep, getopt_dep] + theoradec_libs,
 )
 
+libtheora_info_sources = files('libtheora_info.c')
+
+libtheora_info = executable(
+  'libtheora_info',
+  libtheora_info_sources,
+  dependencies: [config_dep] + theoraenc_libs,
+)
+
 player_example_sources = files('player_example.c')
 
 player_example = executable(
@@ -77,5 +85,14 @@ png2theora = executable(
   png2theora_sources,
   c_args: compile_args,
   dependencies: [ogg_dep, libpng_dep, unistd_dep, m_dep, getopt_dep, config_dep] +
+  theoraenc_libs,
+)
+
+tiff2theora_sources = files('tiff2theora.c')
+
+tiff2theora = executable(
+  'tiff2theora',
+  tiff2theora_sources,
+  dependencies: [ogg_dep, tiff_dep, unistd_dep, m_dep, getopt_dep, config_dep] +
   theoraenc_libs,
 )

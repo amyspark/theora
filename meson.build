@@ -2,7 +2,7 @@ project(
   'theora',
   'c',
   'cpp',
-  version: '1.1.1',
+  version: '1.2.0',
   meson_version: '>= 0.49.0',
   license: 'BSD-3-Clause',
   default_options: ['c_std=c11'],
@@ -91,6 +91,16 @@ if cc.has_header('unistd.h')
   unistd_dep = declare_dependency()
 else
   unistd_dep = disabler()
+endif
+
+tiff_dep = dependency('tiff', required: false, disabler: true)
+
+if tiff_dep.found() and not cc.has_header_symbol(
+    'tiffio.h',
+    'TIFFReadRGBAImage',
+    dependencies: tiff_dep
+  )
+  tiff_dep = disabler()
 endif
 
 telemetry = get_option('telemetry')
@@ -216,10 +226,7 @@ if spec.auto() or spec.enabled()
     tex_pkg_ok = false
   endif
 
-  if tex_pkg_ok and meson.project_version() > '1.2.0alpha1'
-    # libtheora <= 1.2.0alpha1 has a tex file which is incompatible
-    # with TeX distributions < 2015 at the least.
-    # See commit fbb275803696085225c310773474ef4dcf8a4528.
+  if tex_pkg_ok
     subdir('doc/spec')
   else
     message('*** Format Specification will not be built.')
