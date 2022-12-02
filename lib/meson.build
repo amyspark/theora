@@ -38,6 +38,8 @@ decoder_sources = files(
   'state.c',
 )
 
+common_arm_sources = files()
+
 if asm
   if conf.get('CPU_x86_64', false)
     if cc.get_id() != 'msvc'
@@ -107,6 +109,47 @@ if asm
         'x86_vc/x86state.c',
       )
     endif
+  elif cc.get_id() == 'gcc' and conf.get('CPU_arm', false)
+    # The Arm bits require the Arm -> GNU conversion script
+
+    arm2gnu_pl = find_program('arm/arm2gnu.pl', required: true)
+    arm2gnu_py = find_program('arm/arm2gnu-wrapper.py', required: true)
+
+    arm2gnu_gen = generator(
+      arm2gnu_py,
+      arguments: ['--program', arm2gnu_pl.full_path(), '@INPUT@'],
+      capture: true,
+      output: '@BASENAME@-gnu.S',
+    )
+
+    arm_opts_s = configure_file(
+      input: 'arm/armopts.s.in',
+      configuration: conf,
+      output: 'armopts.S',
+    )
+
+    common_arm_sources += arm2gnu_gen.process(
+      files('arm/armbits.s', 'arm/armfrag.s', 'arm/armidct.s', 'arm/armloop.s'),
+      arm_opts_s,
+    )
+
+    encoder_sources += arm2gnu_gen.process(
+      files(
+        'arm/armencfrag.s',
+        'arm/armenquant.s',
+      ),
+    )
+
+    encoder_sources += files(
+      'arm/armcpu.c',
+      'arm/armenc.c',
+      'arm/armstate.c',
+    )
+
+    decoder_sources += files(
+      'arm/armcpu.c',
+      'arm/armstate.c',
+    )
   endif
 endif
 
@@ -179,7 +222,7 @@ endif
 
 libtheoradec = library(
   'theoradec',
-  decoder_sources + decoder_res,
+  decoder_sources + common_arm_sources + decoder_res,
   dependencies: [m_dep, libpng_dep, ogg_dep, cairo_dep, config_dep],
   include_directories: incdir,
   vs_module_defs: '../win32/xmingw32/libtheoradec-all.def',
@@ -202,8 +245,8 @@ theoradec_dep = declare_dependency(
 
 libtheoraenc = library(
   'theoraenc',
-  encoder_sources + encoder_res,
-  dependencies: [m_dep, libpng_dep, ogg_dep, config_dep],
+  encoder_sources + common_arm_sources + encoder_res,
+  dependencies: [m_dep, ogg_dep, config_dep],
   include_directories: incdir,
   vs_module_defs: '../win32/xmingw32/libtheoraenc-all.def',
   c_args: compile_args,
@@ -225,7 +268,7 @@ theoraenc_dep = declare_dependency(
 
 libtheora = library(
   'theora',
-  encoder_sources + decoder_sources,
+  encoder_sources + common_arm_sources + decoder_sources,
   dependencies: [m_dep, libpng_dep, ogg_dep, config_dep],
   include_directories: incdir,
   c_args: compile_args,
